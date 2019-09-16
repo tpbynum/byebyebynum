@@ -1,0 +1,59 @@
+
+
+from datetime import datetime
+from darksky import forecast
+from twilio.rest import Client
+
+
+#Twilio information
+account_sid = 'ACCOUNTSID'
+auth_token = 'AUTHTOKEN'
+client = Client(account_sid, auth_token)
+my_twilio_number = '+TWILIONUMBER'
+my_cell_phone = '+MYNUMBER'
+
+#DarkSky information
+latitude = LAT
+longtitude = -LONG
+key = 'KEY'
+
+#Time Information
+date = datetime.today()
+today = date.strftime('%Y-%m-%dT%H:00:00')
+
+#Weather information
+weather = forecast(key, latitude, longtitude, time=today)
+forecast = weather['daily']['data'][0]['summary']
+temp_max = int(weather['daily']['data'][0]['temperatureHigh'])
+temp_min = int(weather['daily']['data'][0]['temperatureLow'])
+precip_prob = weather['daily']['data'][0]['precipProbability']
+cloudy = weather['daily']['data'][0]['cloudCover']
+
+
+sms_message = []
+
+def weather_conditions():
+    """Types text message content based on weather conditions"""
+    if temp_max < 65 or temp_min < 65:
+        sms_message.append("Bundle up, it's going to be {}-{} today".format(temp_min, temp_max))
+    if precip_prob > 0.39:
+        sms_message.append("Bring a raincoat, there is a {}% chance of rain today.".format(precip_prob*100))
+    if cloudy < 0.40:
+        sms_message.append("Wear sunglasses, it's going to be sunny.")
+
+
+def send_sms():
+    """Sends text message based on weather_conditions results. If no conditions met, texts daily forecast"""
+    message_body = ''
+    if sms_message:
+        message_body += '\n'.join(sms_message)
+    message = client.messages \
+                    .create(
+                        body=message_body,
+                        from_=my_twilio_number,
+                        to=my_cell_phone)
+
+    print(message_body)
+weather_conditions()
+send_sms()
+
